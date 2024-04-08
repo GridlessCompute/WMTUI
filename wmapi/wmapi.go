@@ -226,7 +226,7 @@ func (t *WhatsminerAccessToken) initializeWriteAccess(adminPassword string) erro
 	if match == nil {
 		return errors.New("salt format is not correct")
 	}
-	log.Printf("Match: %v\n", match)
+	// log.Printf("Match: %v\n", match)
 	m := md5_crypt.New()
 	result, err := m.Generate([]byte(adminPassword), []byte(salt))
 	if err != nil {
@@ -250,7 +250,7 @@ func (t *WhatsminerAccessToken) initializeWriteAccess(adminPassword string) erro
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 	}
-	log.Printf("NewHash: %v\n", result)
+	// log.Printf("NewHash: %v\n", result)
 
 	//fmt.Println(tokenInfo["Msg"].(map[string]interface{}))
 	//tmp = crypt(pwd[3] + token_info["time"], "$1$" + token_info["newsalt"] + '$')
@@ -348,11 +348,11 @@ func (w *WhatsminerAPI) ExecCommand(accessToken *WhatsminerAccessToken, cmd stri
 	//
 	// This Looks Correct
 	//
-	log.Printf("Json: %v\n", string(apiCmd))
+	//log.Printf("Json: %v\n", string(apiCmd))
 
 	//mode := ecb.NewECBEncrypter(accessToken.Cipher)
 	paddedCmd := addTo16(apiCmd)
-	log.Printf("Padded: %v \n", string(paddedCmd))
+	//log.Printf("Padded: %v \n", string(paddedCmd))
 	dst := make([]byte, len(paddedCmd))
 	mode := ecb.NewECBEncrypter(accessToken.Cipher)
 	mode.CryptBlocks(dst, paddedCmd)
@@ -377,8 +377,8 @@ func (w *WhatsminerAPI) ExecCommand(accessToken *WhatsminerAccessToken, cmd stri
 		"data": encStr,
 	}
 
-	apiPacketStr, _ := json.Marshal(dataEnc)
-	log.Printf("Packet: %v\n", string(apiPacketStr))
+	//apiPacketStr, _ := json.Marshal(dataEnc)
+	//log.Printf("Packet: %v\n", string(apiPacketStr))
 	// Encrypt it and assemble the transport JSON
 	// I Dont Think This is Correct
 	// Makes 32 Long Byte Array
@@ -429,7 +429,7 @@ func (w *WhatsminerAPI) ExecCommand(accessToken *WhatsminerAccessToken, cmd stri
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Reponse Code: %v\n", string(resp))
+	//log.Printf("Reponse Code: %v\n", string(resp))
 	// Modify response to handle weird M31 issues
 	resp = strings.ReplaceAll(resp, "inf", "999")
 	resp = strings.ReplaceAll(resp, "nan", "0")
@@ -461,7 +461,7 @@ func (w *WhatsminerAPI) ExecCommand(accessToken *WhatsminerAccessToken, cmd stri
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Response: %v\n", resp)
+	//log.Printf("Response: %v\n", resp)
 	return result, nil
 }
 

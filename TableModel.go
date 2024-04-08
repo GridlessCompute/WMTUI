@@ -28,39 +28,44 @@ const (
 	UPSort
 )
 
-type CommandKeyMap struct {
-	Up       key.Binding
-	Down     key.Binding
-	Switch   key.Binding
-	Reboot   key.Binding
-	Sleep    key.Binding
-	Wake     key.Binding
-	Pools    key.Binding
-	Limit    key.Binding
-	Fast     key.Binding
-	Slow     key.Binding
-	Help     key.Binding
-	Deselect key.Binding
-	Quit     key.Binding
+type keyMap struct {
+	Up      key.Binding
+	Down    key.Binding
+	Switch  key.Binding
+	Reboot  key.Binding
+	Sleep   key.Binding
+	Wake    key.Binding
+	Pools   key.Binding
+	Limit   key.Binding
+	Fast    key.Binding
+	Slow    key.Binding
+	Help    key.Binding
+	Refresh key.Binding
+	Select  key.Binding
+	Sort    key.Binding
+	Farm    key.Binding
+	NewFarm key.Binding
+	Quit    key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
 // of the key.Map interface.
-func (k CommandKeyMap) ShortHelp() []key.Binding {
+func (k keyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Quit}
 }
 
 // FullHelp returns keybindings for the expanded help view. It's part of the
 // key.Map interface.
-func (k CommandKeyMap) FullHelp() [][]key.Binding {
+func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down, k.Help, k.Quit},           // first column
-		{k.Sleep, k.Wake, k.Fast, k.Slow},        // second column
-		{k.Reboot, k.Pools, k.Limit, k.Deselect}, // Third column
+		{k.Up, k.Down, k.Help, k.Refresh, k.Quit}, // first column
+		{k.Sleep, k.Wake, k.Fast, k.Slow, k.Sort}, // second column
+		{k.Reboot, k.Pools, k.Limit, k.Select},    // Third column
+		{k.Farm, k.NewFarm},
 	}
 }
 
-var keys = CommandKeyMap{
+var keys = keyMap{
 	Up: key.NewBinding(
 		key.WithKeys("up"),
 		key.WithHelp("↑", "Move Up"),
@@ -71,7 +76,7 @@ var keys = CommandKeyMap{
 	),
 	Switch: key.NewBinding(
 		key.WithKeys("tab"),
-		key.WithHelp("tab", "Switch to Main View"),
+		key.WithHelp("tab", "Switch to Views"),
 	),
 	Reboot: key.NewBinding(
 		key.WithKeys("r"),
@@ -105,108 +110,36 @@ var keys = CommandKeyMap{
 		key.WithKeys("?"),
 		key.WithHelp("?", "toggle help"),
 	),
-	Deselect: key.NewBinding(
+	Select: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("enter", "Deselect Miner"),
+		key.WithHelp("enter", "Select/Deselect Miner"),
+	),
+	Refresh: key.NewBinding(
+		key.WithKeys("m"),
+		key.WithHelp("m", "Refresh Miners"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
 		key.WithHelp("q", "quit"),
 	),
-}
-
-type MainKeyMap struct {
-	Up       key.Binding
-	Down     key.Binding
-	Switch   key.Binding
-	Reboot   key.Binding
-	Sleep    key.Binding
-	Wake     key.Binding
-	Pools    key.Binding
-	Limit    key.Binding
-	Fast     key.Binding
-	Slow     key.Binding
-	Help     key.Binding
-	Deselect key.Binding
-	Quit     key.Binding
-}
-
-// ShortHelp returns keybindings to be shown in the mini help view. It's part
-// of the key.Map interface.
-func (k MainKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit}
-}
-
-// FullHelp returns keybindings for the expanded help view. It's part of the
-// key.Map interface.
-func (k MainKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Up, k.Down, k.Help, k.Quit},           // first column
-		{k.Sleep, k.Wake, k.Fast, k.Slow},        // second column
-		{k.Reboot, k.Pools, k.Limit, k.Deselect}, // Third column
-	}
-}
-
-var keys = MainKeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("↑", "Move Up"),
+	Sort: key.NewBinding(
+		key.WithKeys("`"),
+		key.WithHelp("`", "Sort"),
 	),
-	Down: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("↓", "Move Down"),
+	Farm: key.NewBinding(
+		key.WithKeys("a"),
+		key.WithHelp("a", "select farm"),
 	),
-	Switch: key.NewBinding(
-		key.WithKeys("tab"),
-		key.WithHelp("tab", "Switch to Main View"),
-	),
-	Reboot: key.NewBinding(
-		key.WithKeys("r"),
-		key.WithHelp("r", "Reboot Miner(s)"),
-	),
-	Sleep: key.NewBinding(
-		key.WithKeys("s"),
-		key.WithHelp("s", "Sleep Miner(s)"),
-	),
-	Wake: key.NewBinding(
-		key.WithKeys("w"),
-		key.WithHelp("w", "Wake Miner(s)"),
-	),
-	Pools: key.NewBinding(
-		key.WithKeys("p"),
-		key.WithHelp("p", "Set Pools"),
-	),
-	Limit: key.NewBinding(
-		key.WithKeys("l"),
-		key.WithHelp("l", "Set Power Limit"),
-	),
-	Fast: key.NewBinding(
-		key.WithKeys("f"),
-		key.WithHelp("f", "Set Fast Boot"),
-	),
-	Slow: key.NewBinding(
-		key.WithKeys("o"),
-		key.WithHelp("o", "Set Slow Boot"),
-	),
-	Help: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
-	),
-	Deselect: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("enter", "Deselect Miner"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "quit"),
+	NewFarm: key.NewBinding(
+		key.WithKeys("n"),
+		key.WithHelp("n", "new farm"),
 	),
 }
 
 type TableModel struct {
 	focused         status
 	tables          []table.Model
-	mainKeys        MainKeyMap
-	commandKeys     CommandKeyMap
+	keys            keyMap
 	help            help.Model
 	loaded          bool
 	quiting         bool
@@ -313,7 +246,7 @@ func (m *TableModel) initTables(height int) {
 		{Title: "Limit", Width: 10},
 		{Title: "Pool 1", Width: 50},
 	}
-	defaultTable := table.New(table.WithColumns(columns), table.WithHeight(height-50))
+	defaultTable := table.New(table.WithColumns(columns), table.WithHeight(height-75))
 
 	m.tables = []table.Model{defaultTable, defaultTable}
 }
@@ -396,6 +329,17 @@ func (m *TableModel) FindSelectedMiners() []MinerObj {
 	return miners
 }
 
+func (m *TableModel) FindSelectedMiner(mac string) MinerObj {
+	allMiners := m.modelMinersList
+
+	for _, miner := range allMiners {
+		if miner.Miner.Mac == mac {
+			return miner
+		}
+	}
+	return *new(MinerObj)
+}
+
 func (m TableModel) Init() tea.Cmd {
 	return nil
 }
@@ -408,6 +352,8 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		if !m.loaded {
 			winH = msg.Height
+			m.keys = keys
+			m.help = help.New()
 			fmt.Println("Initializing Tables")
 			m.initTables(winH)
 			fmt.Println("Getting Miners")
@@ -422,45 +368,40 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loaded = true
 		}
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
+		switch {
+		case key.Matches(msg, m.keys.Quit):
 			m.quiting = true
 			return m, tea.Quit
-		}
-	case SetFarmMsg:
-		m.ClearTables()
-		m.initTables(winH)
-		m.GenerateInitialMinerList()
-		m.sortBy = IPSort
-		m.sortByIP()
-		m.generateRows()
-	}
-
-	switch m.focused {
-	case MainView:
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "tab":
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
+		case key.Matches(msg, m.keys.Switch):
+			if m.focused == MainView {
 				m.focused = SelectedView
-			case "enter":
-				rowsV, rowsH := m.TransferRow()
+			} else {
+				m.focused = MainView
+			}
+		case key.Matches(msg, m.keys.Select):
 
-				if m.focused == MainView {
-					m.tables[MainView].SetRows(rowsV)
-					m.tables[SelectedView].SetRows(rowsH)
-				} else if m.focused == SelectedView {
-					m.tables[MainView].SetRows(rowsH)
-					m.tables[SelectedView].SetRows(rowsV)
-				}
-			case "up":
-				m.tables[m.focused].MoveUp(1)
-			case "down":
-				m.tables[m.focused].MoveDown(1)
-			case "r":
+			rowsV, rowsH := m.TransferRow()
+
+			if m.focused == MainView {
+				m.tables[MainView].SetRows(rowsV)
+				m.tables[SelectedView].SetRows(rowsH)
+			} else if m.focused == SelectedView {
+				m.tables[MainView].SetRows(rowsH)
+				m.tables[SelectedView].SetRows(rowsV)
+			}
+		case key.Matches(msg, m.keys.Up):
+			m.tables[m.focused].MoveUp(1)
+		case key.Matches(msg, m.keys.Down):
+			m.tables[m.focused].MoveDown(1)
+		case key.Matches(msg, m.keys.Refresh):
+			if m.focused == MainView {
 				m.refreshMainTable()
 				m.generateRows()
-			case "`":
+			}
+		case key.Matches(msg, m.keys.Sort):
+			if m.focused == MainView {
 				// TODO: Implement Sort -> 90% done IPSort is a bit janky due to the nature of strings
 				switch m.sortBy {
 				case IPSort:
@@ -480,74 +421,114 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.sortByIP()
 					m.generateRows()
 				}
-			case "f":
-				Models[TableView] = m
-				return Models[ListView].Update(tea.WindowSizeMsg{Width: 50, Height: 50})
-			case "n":
-				Models[TableView] = m
-
-				return Models[FormView].Update(tea.WindowSizeMsg{})
 			}
-		}
-	case SelectedView:
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch {
-			case key.Matches(msg, m.commandKeys.Deselect):
-				rowsV, rowsH := m.TransferRow()
-
-				if m.focused == MainView {
-					m.tables[MainView].SetRows(rowsV)
-					m.tables[SelectedView].SetRows(rowsH)
-				} else if m.focused == SelectedView {
-					m.tables[MainView].SetRows(rowsH)
-					m.tables[SelectedView].SetRows(rowsV)
-				}
-			case key.Matches(msg, m.commandKeys.Switch):
-				m.focused = MainView
-			case key.Matches(msg, m.commandKeys.Up):
-				m.tables[m.focused].MoveUp(1)
-			case key.Matches(msg, m.commandKeys.Down):
-				m.tables[m.focused].MoveDown(1)
-			case key.Matches(msg, m.commandKeys.Reboot):
-				// TODO: Implement Reboot
+		case key.Matches(msg, m.keys.Farm):
+			Models[TableView] = m
+			return Models[ListView].Update(tea.WindowSizeMsg{Width: 50, Height: 50})
+		case key.Matches(msg, m.keys.NewFarm):
+			Models[TableView] = m
+			return Models[FormView].Update(tea.WindowSizeMsg{})
+			// SELECTEDVIEW
+		case key.Matches(msg, m.keys.Reboot):
+			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "reboot", nil)
 				}
-			case key.Matches(msg, m.commandKeys.Sleep):
-				// TODO: Implement Sleep
+			} else {
+				//reboot highlighted machine
+				mac := m.tables[m.focused].SelectedRow()[1]
+				miner := m.FindSelectedMiner(mac)
+
+				if miner.Token.IPAddress != "" {
+					SendToApi(miner.Token, "reboot", nil)
+				}
+			}
+		case key.Matches(msg, m.keys.Sleep):
+			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "power_off", map[string]interface{}{"respbefore": "false"})
 				}
-			case key.Matches(msg, m.commandKeys.Pools):
-				// TODO: Implement Pools
-			case key.Matches(msg, m.commandKeys.Limit):
-				// TODO: Implement Power Limit
-			case key.Matches(msg, m.commandKeys.Wake):
-				// TODO: Implement Wake
+			} else {
+				mac := m.tables[m.focused].SelectedRow()[1]
+				miner := m.FindSelectedMiner(mac)
+
+				if miner.Token.IPAddress != "" {
+					SendToApi(miner.Token, "power_off", map[string]interface{}{"respbefore": "false"})
+				}
+			}
+		case key.Matches(msg, m.keys.Pools):
+			// TODO: Implement Pools
+			if m.focused == SelectedView {
+				// set pools for multiple machines
+			} else {
+				// set pools for highlighted machine
+			}
+		case key.Matches(msg, m.keys.Limit):
+			// TODO: Implement Power Limit
+			if m.focused == SelectedView {
+				// set power limit for selected machines
+			} else {
+				// set powerlimit for highlighted machine
+			}
+		case key.Matches(msg, m.keys.Wake):
+			// TODO: Implement Wake
+			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "power_on", nil)
 				}
-			case key.Matches(msg, m.commandKeys.Fast):
-				// TODO: Implement Fastboot Toggle
+			} else {
+				// wake selected machine
+				mac := m.tables[m.focused].SelectedRow()[1]
+				miner := m.FindSelectedMiner(mac)
+
+				if miner.Token.IPAddress != "" {
+					SendToApi(miner.Token, "power_on", nil)
+				}
+			}
+		case key.Matches(msg, m.keys.Fast):
+			// TODO: Implement Fastboot
+			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "enable_btminer_fast_boot", nil)
 				}
-			case key.Matches(msg, m.commandKeys.Slow):
-				// TODO: Implement Slow Boot
+			} else {
+				// set fastboot on selected machine
+				mac := m.tables[m.focused].SelectedRow()[1]
+				miner := m.FindSelectedMiner(mac)
+
+				if miner.Token.IPAddress != "" {
+					SendToApi(miner.Token, "enable_btminer_fast_boot", nil)
+				}
+			}
+		case key.Matches(msg, m.keys.Slow):
+			// TODO: Implement Slow Boot
+			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "disable_btminer_fast_boot", nil)
 				}
-				// case "b":
-				// 	// TODO: Implemet Blink Toggle
-				// 	// Need function to fins selected miners
+			} else {
+				// set slowboot on selected machine
+				mac := m.tables[m.focused].SelectedRow()[1]
+				miner := m.FindSelectedMiner(mac)
+
+				if miner.Token.IPAddress != "" {
+					SendToApi(miner.Token, "disable_btminer_fast_boot", nil)
+				}
 			}
 		}
+
+	case SetFarmMsg:
+		m.ClearTables()
+		m.initTables(winH)
+		m.GenerateInitialMinerList()
+		m.sortBy = IPSort
+		m.sortByIP()
+		m.generateRows()
 	}
 
 	// return m, cmd
@@ -563,14 +544,12 @@ func (t TableModel) View() string {
 		switch t.focused {
 		case MainView:
 
-			helpView := t.help.View(t.commandKeys)
+			helpView := t.help.View(t.keys)
 			t.help.ShowAll = true
-
-			// return "\n" + status + strings.Repeat("\n", height) + helpView
 
 			return fmt.Sprintln(ChosenFarm) + "\n" + t.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView
 		default:
-			return t.tables[SelectedView].View() + "\n" + t.help.View(t.commandKeys)
+			return t.tables[SelectedView].View() + "\n" + t.help.View(t.keys)
 		}
 	} else {
 		return "Scanning..."
