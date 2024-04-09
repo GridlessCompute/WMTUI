@@ -369,17 +369,21 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		switch {
+		// quite program
 		case key.Matches(msg, m.keys.Quit):
 			m.quiting = true
 			return m, tea.Quit
+			// Show full hellp
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
+			// Switch between table
 		case key.Matches(msg, m.keys.Switch):
 			if m.focused == MainView {
 				m.focused = SelectedView
 			} else {
 				m.focused = MainView
 			}
+			// Swap slected miner between tables
 		case key.Matches(msg, m.keys.Select):
 
 			rowsV, rowsH := m.TransferRow()
@@ -391,15 +395,19 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.tables[MainView].SetRows(rowsH)
 				m.tables[SelectedView].SetRows(rowsV)
 			}
+			// Move up in table
 		case key.Matches(msg, m.keys.Up):
 			m.tables[m.focused].MoveUp(1)
+			// Move up in tabel
 		case key.Matches(msg, m.keys.Down):
 			m.tables[m.focused].MoveDown(1)
+			// Refresh Main table
 		case key.Matches(msg, m.keys.Refresh):
 			if m.focused == MainView {
 				m.refreshMainTable()
 				m.generateRows()
 			}
+			// Sort Machines
 		case key.Matches(msg, m.keys.Sort):
 			if m.focused == MainView {
 				// TODO: Implement Sort -> 90% done IPSort is a bit janky due to the nature of strings
@@ -422,13 +430,15 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.generateRows()
 				}
 			}
+			// Select Farm
 		case key.Matches(msg, m.keys.Farm):
 			Models[TableView] = m
 			return Models[ListView].Update(tea.WindowSizeMsg{Width: 50, Height: 50})
+			// Create New Farm
 		case key.Matches(msg, m.keys.NewFarm):
 			Models[TableView] = m
 			return Models[FormView].Update(tea.WindowSizeMsg{})
-			// SELECTEDVIEW
+			// Reboot Machine
 		case key.Matches(msg, m.keys.Reboot):
 			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
@@ -436,7 +446,6 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					SendToApi(miner.Token, "reboot", nil)
 				}
 			} else {
-				//reboot highlighted machine
 				mac := m.tables[m.focused].SelectedRow()[1]
 				miner := m.FindSelectedMiner(mac)
 
@@ -444,6 +453,7 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					SendToApi(miner.Token, "reboot", nil)
 				}
 			}
+			// Sleep Machine
 		case key.Matches(msg, m.keys.Sleep):
 			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
@@ -458,29 +468,38 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					SendToApi(miner.Token, "power_off", map[string]interface{}{"respbefore": "false"})
 				}
 			}
+			//  Set Pools
 		case key.Matches(msg, m.keys.Pools):
 			// TODO: Implement Pools
+			// This is going to need a new pool view
 			if m.focused == SelectedView {
 				// set pools for multiple machines
+				// Need to find a way to send in the machines maybe with a message
+				// ? call update function on PoolModel and pass in a miners message that contains the miner info ?
+				Models[SelectedView] = m
+				return Models[PoolView].Update(tea.WindowSizeMsg{})
 			} else {
 				// set pools for highlighted machine
+				Models[SelectedView] = m
+				return Models[PoolView].Update(tea.WindowSizeMsg{})
 			}
+			// Set A Power Limit
 		case key.Matches(msg, m.keys.Limit):
 			// TODO: Implement Power Limit
+			// this is going to need a new powerlimit view
 			if m.focused == SelectedView {
 				// set power limit for selected machines
 			} else {
 				// set powerlimit for highlighted machine
 			}
+			// Wake sleeping Machine
 		case key.Matches(msg, m.keys.Wake):
-			// TODO: Implement Wake
 			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "power_on", nil)
 				}
 			} else {
-				// wake selected machine
 				mac := m.tables[m.focused].SelectedRow()[1]
 				miner := m.FindSelectedMiner(mac)
 
@@ -488,15 +507,14 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					SendToApi(miner.Token, "power_on", nil)
 				}
 			}
+			// Activate Fast Boot
 		case key.Matches(msg, m.keys.Fast):
-			// TODO: Implement Fastboot
 			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "enable_btminer_fast_boot", nil)
 				}
 			} else {
-				// set fastboot on selected machine
 				mac := m.tables[m.focused].SelectedRow()[1]
 				miner := m.FindSelectedMiner(mac)
 
@@ -504,15 +522,14 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					SendToApi(miner.Token, "enable_btminer_fast_boot", nil)
 				}
 			}
+			// Activate Slow Boot
 		case key.Matches(msg, m.keys.Slow):
-			// TODO: Implement Slow Boot
 			if m.focused == SelectedView {
 				miners := m.FindSelectedMiners()
 				for _, miner := range miners {
 					SendToApi(miner.Token, "disable_btminer_fast_boot", nil)
 				}
 			} else {
-				// set slowboot on selected machine
 				mac := m.tables[m.focused].SelectedRow()[1]
 				miner := m.FindSelectedMiner(mac)
 

@@ -17,6 +17,7 @@ const (
 	TableView model = iota
 	ListView
 	FormView
+	PoolView
 )
 
 var Models []tea.Model
@@ -55,7 +56,7 @@ func SetSavedFarm(farm FarmStruct) {
 
 func main() {
 	ChosenFarm = PullSavedFarm()
-	Models = []tea.Model{NewTable(), NewList(), NewForm()}
+	Models = []tea.Model{NewTable(), NewList(), NewForm(), NewPoolForm()}
 	SelectedModel = Models[TableView]
 	p := tea.NewProgram(SelectedModel)
 
