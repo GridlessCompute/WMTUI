@@ -349,6 +349,49 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var winH int
 	switch msg := msg.(type) {
+	case poolStruct:
+		if m.focused == MainView {
+			//take msg.POOLINFO and send a command with it, making custom workernames
+			mac := m.tables[m.focused].SelectedRow()[1]
+			miner := m.FindSelectedMiner(mac)
+			if msg.WorkerType == "mac" || msg.WorkerType == "MAC" {
+				//do thing based on mac
+				minerMac := miner.Miner.Mac
+				if msg.Worker1 != "" {
+					msg.Worker1 = msg.Worker1 + "." + minerMac
+				}
+				if msg.Worker2 != "" {
+					msg.Worker2 = msg.Worker2 + "." + minerMac
+				}
+				if msg.Worker3 != "" {
+					msg.Worker3 = msg.Worker3 + "." + minerMac
+				}
+				// SENDTOAPI POOLS GOES BELOW
+				SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+
+			} else if msg.WorkerType == "ip" || msg.WorkerType == "IP" {
+				//do thing based on IP
+				minerIP := miner.Miner.Ip
+				if msg.Worker1 != "" {
+					msg.Worker1 = msg.Worker1 + "." + minerIP
+				}
+				if msg.Worker2 != "" {
+					msg.Worker2 = msg.Worker2 + "." + minerIP
+				}
+				if msg.Worker3 != "" {
+					msg.Worker3 = msg.Worker3 + "." + minerIP
+				}
+				// SENDTOAPI POOLS GOES HERE
+				SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+			}
+		} else if m.focused == SelectedView {
+			//take msg.POOLINFO and send a command with it, making custom workernames
+			if msg.WorkerType == "mac" || msg.WorkerType == "MAC" {
+				//do thing based on mac
+			} else if msg.WorkerType == "ip" || msg.WorkerType == "IP" {
+				//do thing based on IP
+			}
+		}
 	case tea.WindowSizeMsg:
 		if !m.loaded {
 			winH = msg.Height

@@ -19,18 +19,16 @@ type PoolModel struct {
 }
 
 type poolStruct struct {
-	machineMac string
-	machineIP  string
-	url1       string
-	worker1    string
-	psswd1     string
-	url2       string
-	worker2    string
-	psswd2     string
-	url3       string
-	worker3    string
-	psswd3     string
-	workerType string
+	Url1       string
+	Worker1    string
+	Psswd1     string
+	Url2       string
+	Worker2    string
+	Psswd2     string
+	Url3       string
+	Worker3    string
+	Psswd3     string
+	WorkerType string
 }
 
 func NewPoolForm() *PoolModel {
@@ -44,13 +42,13 @@ func NewPoolForm() *PoolModel {
 	form.url1.Placeholder = "Pool 1 Url"
 	form.worker1.Placeholder = "Raw Worker Name"
 	form.psswd1.Placeholder = "Pool Password"
-	form.url2.Placeholder = "Pool 1 Url"
+	form.url2.Placeholder = "Pool 2 Url"
 	form.worker2.Placeholder = "Raw Worker Name"
 	form.psswd2.Placeholder = "Pool Password"
-	form.url3.Placeholder = "Pool 1 Url"
+	form.url3.Placeholder = "Pool 3 Url"
 	form.worker3.Placeholder = "Raw Worker Name"
 	form.psswd3.Placeholder = "Pool Password"
-	form.workerType.Placeholder = "MAC / IP"
+	form.workerType.Placeholder = "(MAC) Worker / (IP) Worker"
 
 	form.url1.Focus()
 	return form
@@ -67,17 +65,17 @@ func NewPoolInfo(url1, url2, url3, worker1, worker2, worker3, psswd1, psswd2, ps
 	// ps.machineMac = miner.Miner.Mac
 	// ps.machineIP = miner.Miner.Ip
 
-	ps.worker1 = worker1
-	ps.worker2 = worker2
-	ps.worker3 = worker3
+	ps.Worker1 = worker1
+	ps.Worker2 = worker2
+	ps.Worker3 = worker3
 
-	ps.url1 = url1
-	ps.url2 = url2
-	ps.url3 = url3
+	ps.Url1 = url1
+	ps.Url2 = url2
+	ps.Url3 = url3
 
-	ps.psswd1 = psswd1
-	ps.psswd2 = psswd2
-	ps.psswd3 = psswd3
+	ps.Psswd1 = psswd1
+	ps.Psswd2 = psswd2
+	ps.Psswd3 = psswd3
 
 	return ps
 
