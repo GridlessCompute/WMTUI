@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -349,6 +350,27 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var winH int
 	switch msg := msg.(type) {
+	case PowerStruct:
+		newLimit, err := strconv.Atoi(msg.Power)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if m.focused == MainView {
+			mac := m.tables[m.focused].SelectedRow()[1]
+			miner := m.FindSelectedMiner(mac)
+
+			if newLimit >= 500 && newLimit <= 3500 {
+				SendToApi(miner.Token, "adjust_power_limit", map[string]interface{}{"power_limit": newLimit})
+			}
+		} else if m.focused == SelectedView {
+			miners := m.FindSelectedMiners()
+			if newLimit >= 500 && newLimit <= 3500 {
+				for _, miner := range miners {
+					SendToApi(miner.Token, "adjust_power_limit", map[string]interface{}{"power_limit": newLimit})
+				}
+			}
+
+		}
 	case poolStruct:
 		if m.focused == MainView {
 			//take msg.POOLINFO and send a command with it, making custom workernames
@@ -386,10 +408,36 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		} else if m.focused == SelectedView {
 			//take msg.POOLINFO and send a command with it, making custom workernames
+			miners := m.FindSelectedMiners()
 			if msg.WorkerType == "mac" || msg.WorkerType == "MAC" {
-				//do thing based on mac
+				for _, miner := range miners {
+					if msg.Worker1 != "" {
+						msg.Worker1 = msg.Worker1 + "." + miner.Miner.Mac
+					}
+					if msg.Worker2 != "" {
+						msg.Worker2 = msg.Worker2 + "." + miner.Miner.Mac
+					}
+					if msg.Worker3 != "" {
+						msg.Worker3 = msg.Worker3 + "." + miner.Miner.Mac
+					}
+					// SENDTOAPI POOLS GOES BELOW
+					SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+				}
 			} else if msg.WorkerType == "ip" || msg.WorkerType == "IP" {
-				//do thing based on IP
+				for _, miner := range miners {
+					minerIP := miner.Miner.Ip
+					if msg.Worker1 != "" {
+						msg.Worker1 = msg.Worker1 + "." + minerIP
+					}
+					if msg.Worker2 != "" {
+						msg.Worker2 = msg.Worker2 + "." + minerIP
+					}
+					if msg.Worker3 != "" {
+						msg.Worker3 = msg.Worker3 + "." + minerIP
+					}
+					// SENDTOAPI POOLS GOES HERE
+					SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+				}
 			}
 		}
 	case tea.WindowSizeMsg:
@@ -523,17 +571,18 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return Models[PoolView].Update(tea.WindowSizeMsg{})
 			} else {
 				// set pools for highlighted machine
-				Models[SelectedView] = m
+				Models[MainView] = m
 				return Models[PoolView].Update(tea.WindowSizeMsg{})
 			}
 			// Set A Power Limit
 		case key.Matches(msg, m.keys.Limit):
-			// TODO: Implement Power Limit
-			// this is going to need a new powerlimit view
 			if m.focused == SelectedView {
-				// set power limit for selected machines
+				Models[SelectedView] = m
+				return Models[PowerView].Update(tea.WindowSizeMsg{})
 			} else {
-				// set powerlimit for highlighted machine
+				// set pools for highlighted machine
+				Models[MainView] = m
+				return Models[PowerView].Update(tea.WindowSizeMsg{})
 			}
 			// Wake sleeping Machine
 		case key.Matches(msg, m.keys.Wake):

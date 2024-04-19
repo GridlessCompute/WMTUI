@@ -18,6 +18,7 @@ const (
 	ListView
 	FormView
 	PoolView
+	PowerView
 )
 
 var Models []tea.Model
@@ -56,7 +57,7 @@ func SetSavedFarm(farm FarmStruct) {
 
 func main() {
 	ChosenFarm = PullSavedFarm()
-	Models = []tea.Model{NewTable(), NewList(), NewForm(), NewPoolForm()}
+	Models = []tea.Model{NewTable(), NewList(), NewForm(), NewPoolForm(), NewPower()}
 	SelectedModel = Models[TableView]
 	p := tea.NewProgram(SelectedModel)
 
