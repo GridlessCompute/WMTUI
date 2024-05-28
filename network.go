@@ -29,6 +29,7 @@ type Miner struct {
 
 type MinerObj struct {
 	Miner   Miner
+	status  bool
 	Token   api.WhatsminerAccessToken
 	Created time.Time
 }
@@ -64,6 +65,8 @@ func getFromApi(token api.WhatsminerAccessToken, cmd string) (map[string]interfa
 
 func SendToApi(token api.WhatsminerAccessToken, cmd string, params map[string]interface{}) (map[string]interface{}, error) {
 	res, err := wapi.ExecCommand(&token, cmd, params)
+	fmt.Println(cmd)
+	fmt.Println(params)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -224,8 +227,9 @@ func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) 
 	if parseErr != nil {
 
 	} else {
-		if len(res.Summary) > 0 {
-			mnrO.Miner.AcvtivePool = "pool"
+		if res.Status[0].Status == "S" && res.Summary[0].PowerLimit != 0 { // TODO: this is probably whats only showing ON miners
+			mnrO.status = true
+			//mnrO.Miner.AcvtivePool = "pool"
 			mnrO.Miner.Hrrt = int(res.Summary[0].HSRT)
 			mnrO.Miner.Limit = res.Summary[0].PowerLimit
 			mnrO.Miner.UpTime = res.Summary[0].Uptime
@@ -233,6 +237,18 @@ func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) 
 			mnrO.Miner.Wt = int(res.Summary[0].PowerRate)
 			mnrO.Miner.Errcode = matchedString
 			mnrO.Miner.Fastboot = res.Summary[0].BtminerFastBoot
+
+			hashChannel <- mnrO
+		} else if res.Status[0].Status == "E" || (res.Status[0].Status == "S" && res.Summary[0].PowerLimit == 0) {
+			mnrO.status = false
+			//mnrO.Miner.AcvtivePool = "pool"
+			mnrO.Miner.Hrrt = 0
+			mnrO.Miner.Limit = 0
+			mnrO.Miner.UpTime = 0
+			mnrO.Miner.W = 0
+			mnrO.Miner.Wt = 0
+			mnrO.Miner.Errcode = ""
+			mnrO.Miner.Fastboot = ""
 
 			hashChannel <- mnrO
 		}

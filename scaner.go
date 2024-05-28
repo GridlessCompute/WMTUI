@@ -39,10 +39,10 @@ func GenerateRangeIPs(r IPRange) []string {
 		O3 := strconv.Itoa(i)
 		for _, ip := range subs {
 			O4 := strconv.Itoa(ip)
+
 			ips = append(ips, fmt.Sprint(base+O3+"."+O4))
 		}
 	}
-
 	return ips
 }
 
