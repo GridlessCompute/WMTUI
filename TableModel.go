@@ -43,11 +43,60 @@ func NewTable() *TableModel {
 	return &TableModel{}
 }
 
-func (m TableModel) Init() tea.Cmd {
+func (m *TableModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *TableModel) initTables(height int, width int) {
+	columns := []table.Column{
+		{Title: "IP", Width: 15},
+		{Title: "Mac", Width: 20},
+		{Title: "status", Width: 10},
+		{Title: "Error Code", Width: 20},
+		{Title: "Up time", Width: 10},
+		{Title: "Hsrt", Width: 7},
+		{Title: "WT", Width: 5},
+		{Title: "W", Width: 7},
+		{Title: "Limit", Width: 7},
+		{Title: "Pool 1", Width: 30},
+	}
+	defaultTable := table.New(table.WithColumns(columns), table.WithHeight(height-25), table.WithWidth(width))
+
+	m.tables = []table.Model{defaultTable, defaultTable}
+}
+
+func (m *TableModel) generateRows() {
+	var rows []table.Row
+	var statusString string
+	if len(m.modelMinersList) > 0 {
+		for _, miner := range m.modelMinersList {
+			if miner.status == false {
+				statusString = "sleeping"
+			} else {
+				statusString = "running"
+			}
+
+			rows = append(rows, table.Row{
+				miner.Miner.Ip,
+				miner.Miner.Mac,
+				statusString,
+				miner.Miner.Errcode,
+				fmt.Sprint(miner.Miner.UpTime),
+				fmt.Sprint(miner.Miner.Hrrt),
+				fmt.Sprint(miner.Miner.Wt),
+				fmt.Sprint(miner.Miner.W),
+				fmt.Sprint(miner.Miner.Limit),
+				fmt.Sprint(miner.Miner.ActivePool),
+			})
+		}
+	} else {
+		rows = append(rows, table.Row{"", "", "", "No miners found", "", "", "", "", ""})
+	}
+
+	m.tables[MainView].SetRows(rows)
+}
+
+func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 	var winH int
@@ -75,6 +124,17 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		}
+
+	case SetFarmMsg:
+
+		m.ClearTables()
+		//m.initTables(winH, winW)
+		m.GenerateInitialMinerList()
+		m.sortBy = IPSort
+		m.sortByIP()
+		m.generateRows()
+		return m, m.Clearscreen
+
 	case poolStruct:
 		if m.focused == MainView {
 			//take msg.POOLINFO and send a command with it, making custom workernames
@@ -162,14 +222,15 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.help.Width = msg.Width
 			m.quiting = false
 			m.loaded = true
+			return m, m.Clearscreen
 		}
 	case tea.KeyMsg:
 		switch {
-		// quite program
+		// quit program
 		case key.Matches(msg, m.keys.Quit):
 			m.quiting = true
 			return m, tea.Quit
-			// Show full hellp
+			// Show full help
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
 			// Switch between table
@@ -194,7 +255,7 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Move up in table
 		case key.Matches(msg, m.keys.Up):
 			m.tables[m.focused].MoveUp(1)
-			// Move up in tabel
+			// Move up in table
 		case key.Matches(msg, m.keys.Down):
 			m.tables[m.focused].MoveDown(1)
 			// Refresh Main table
@@ -202,7 +263,9 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focused == MainView {
 				tea.ClearScreen()
 				m.refreshMainTable()
+				//m.initTables(winH, winW)
 				m.generateRows()
+				return m, m.Clearscreen
 			}
 			// Sort Machines
 		case key.Matches(msg, m.keys.Sort):
@@ -336,14 +399,6 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-
-	case SetFarmMsg:
-		m.ClearTables()
-		m.initTables(winH, winW)
-		m.GenerateInitialMinerList()
-		m.sortBy = IPSort
-		m.sortByIP()
-		m.generateRows()
 	}
 
 	// return m, cmd
@@ -351,7 +406,7 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m TableModel) View() string {
+func (m *TableModel) View() string {
 	if m.quiting {
 		return ""
 	}
@@ -360,11 +415,10 @@ func (m TableModel) View() string {
 		case MainView:
 
 			helpView := m.help.View(m.keys)
-			m.help.ShowAll = true
 
-			return fmt.Sprintln(ChosenFarm) + "\n" + m.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView
+			return m.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView + "\n" + ChosenFarm.Name
 		default:
-			return m.tables[SelectedView].View() + "\n" + m.help.View(m.keys)
+			return m.tables[SelectedView].View() + "\n" + m.help.View(m.keys) + "\n" + ChosenFarm.Name
 		}
 	} else {
 		return "Scanning..."

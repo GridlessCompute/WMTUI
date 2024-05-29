@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
 	"sort"
 	"sync"
 )
 
-func (m TableModel) GenerateInitialMiner(scanwg *sync.WaitGroup, popwg *sync.WaitGroup, mainChannel chan MinerObj, swg *sync.WaitGroup) {
+func (m *TableModel) GenerateInitialMiner(scanwg *sync.WaitGroup, popwg *sync.WaitGroup, mainChannel chan MinerObj, swg *sync.WaitGroup) {
 	mnrOChannel := make(chan MinerObj, 150)
 	popChannel := make(chan MinerObj, 150)
 
@@ -28,9 +29,11 @@ func (m TableModel) GenerateInitialMiner(scanwg *sync.WaitGroup, popwg *sync.Wai
 	for mnr := range popChannel {
 		m.modelMinersList = append(m.modelMinersList, mnr)
 	}
+
+	fmt.Printf("NUMBER OF MINERS FOUND %d\n", len(m.modelMinersList))
 }
 
-func (m TableModel) GenerateInitialMinerList() {
+func (m *TableModel) GenerateInitialMinerList() {
 	var wg1 sync.WaitGroup
 	var wg2 sync.WaitGroup
 	var swg sync.WaitGroup
@@ -46,27 +49,11 @@ func (m TableModel) GenerateInitialMinerList() {
 	close(channel)
 }
 
-func (m TableModel) generateRows() {
-	var rows []table.Row
-
-	for _, miner := range m.modelMinersList {
-		rows = append(rows, table.Row{
-			miner.Miner.Ip,
-			miner.Miner.Mac,
-			fmt.Sprintln(miner.status),
-			miner.Miner.Errcode,
-			fmt.Sprint(miner.Miner.UpTime),
-			fmt.Sprint(miner.Miner.Hrrt),
-			fmt.Sprint(miner.Miner.Wt),
-			fmt.Sprint(miner.Miner.W),
-			fmt.Sprint(miner.Miner.Limit),
-		})
-	}
-	fmt.Println(rows)
-	m.tables[MainView].SetRows(rows)
+func (m *TableModel) Clearscreen() tea.Msg {
+	return tea.ClearScreen()
 }
 
-func (m TableModel) refreshMainTable() {
+func (m *TableModel) refreshMainTable() {
 	var wgSeven sync.WaitGroup
 	var oldMinerSlice []MinerObj
 	var newMinerSlice []MinerObj
@@ -89,54 +76,38 @@ func (m TableModel) refreshMainTable() {
 	m.modelMinersList = append(m.modelMinersList, newMinerSlice...)
 }
 
-func (m TableModel) initTables(height int, width int) {
-	columns := []table.Column{
-		{Title: "IP", Width: 15},
-		{Title: "Mac", Width: 20},
-		{Title: "status", Width: 20},
-		{Title: "Error Code", Width: 25},
-		{Title: "Up time", Width: 10},
-		{Title: "Hsrt", Width: 10},
-		{Title: "WT", Width: 10},
-		{Title: "W", Width: 10},
-		{Title: "Limit", Width: 10},
-	}
-	defaultTable := table.New(table.WithColumns(columns), table.WithHeight(height-25), table.WithWidth(width))
-
-	m.tables = []table.Model{defaultTable, defaultTable}
-}
-
-func (m TableModel) ClearTables() {
+func (m *TableModel) ClearTables() {
 	m.tables[MainView].SetRows(nil)
 	m.tables[SelectedView].SetRows(nil)
 	m.modelMinersList = m.modelMinersList[:0]
 }
 
-func (m TableModel) sortByIP() {
+func (m *TableModel) sortByIP() {
 	sort.Slice(m.modelMinersList, func(i, j int) bool {
+		// TODO: Do I add a field that's just the miners last octet to help filer properly?
 		return m.modelMinersList[i].Miner.Ip < m.modelMinersList[j].Miner.Ip
 	})
 }
 
-func (m TableModel) sortByMAC() {
+func (m *TableModel) sortByMAC() {
 	sort.Slice(m.modelMinersList, func(i, j int) bool {
 		return m.modelMinersList[i].Miner.Mac < m.modelMinersList[j].Miner.Mac
 	})
 }
 
-func (m TableModel) sortByTH() {
+func (m *TableModel) sortByTH() {
 	sort.Slice(m.modelMinersList, func(i, j int) bool {
 		return m.modelMinersList[i].Miner.Hrrt < m.modelMinersList[j].Miner.Hrrt
 	})
 }
 
-func (m TableModel) sortByUP() {
+func (m *TableModel) sortByUP() {
 	sort.Slice(m.modelMinersList, func(i, j int) bool {
 		return m.modelMinersList[i].Miner.UpTime < m.modelMinersList[j].Miner.UpTime
 	})
 }
 
-func (m TableModel) TransferRow() ([]table.Row, []table.Row) {
+func (m *TableModel) TransferRow() ([]table.Row, []table.Row) {
 	// Seems to transfer all rows
 	var tableH table.Model
 	var newRowsV []table.Row
@@ -167,7 +138,7 @@ func (m TableModel) TransferRow() ([]table.Row, []table.Row) {
 	return newRowsV, newRowsH
 }
 
-func (m TableModel) FindSelectedMiners() []MinerObj {
+func (m *TableModel) FindSelectedMiners() []MinerObj {
 	var miners []MinerObj
 
 	selectedMiners := m.tables[SelectedView].Rows()
@@ -184,7 +155,7 @@ func (m TableModel) FindSelectedMiners() []MinerObj {
 	return miners
 }
 
-func (m TableModel) FindSelectedMiner(mac string) MinerObj {
+func (m *TableModel) FindSelectedMiner(mac string) MinerObj {
 	allMiners := m.modelMinersList
 
 	for _, miner := range allMiners {
