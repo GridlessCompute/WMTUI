@@ -15,19 +15,24 @@ func (m *TableModel) GenerateInitialMiner(scanwg *sync.WaitGroup, popwg *sync.Wa
 	defer swg.Done()
 
 	f := ChosenFarm
-
+	fmt.Println("generating IP")
 	ips := GenerateRangeIPs(GenIpRange(f))
-
+	fmt.Println("DONE generating IP")
+	fmt.Println("scanning range")
 	ScanRange(ips, scanwg, mnrOChannel)
 	scanwg.Wait()
 	close(mnrOChannel)
-
+	fmt.Println("DONE scanning range")
+	fmt.Println("populating range")
 	PopulateRange(mnrOChannel, popwg, popChannel)
 	popwg.Wait()
 	close(popChannel)
+	fmt.Println("DONE populating range")
 
-	for mnr := range popChannel {
-		m.modelMinersList = append(m.modelMinersList, mnr)
+	if len(popChannel) > 0 {
+		for mnr := range popChannel {
+			m.modelMinersList = append(m.modelMinersList, mnr)
+		}
 	}
 
 	fmt.Printf("NUMBER OF MINERS FOUND %d\n", len(m.modelMinersList))
@@ -43,9 +48,9 @@ func (m *TableModel) GenerateInitialMinerList() {
 	swg.Add(1)
 
 	go m.GenerateInitialMiner(&wg1, &wg2, channel, &swg)
-
-	swg.Wait()
-
+	fmt.Println("waiting for miners to be initialized")
+	swg.Wait() // todo getting stuck here if no miners
+	fmt.Println("done waiting for miner list")
 	close(channel)
 }
 
@@ -83,10 +88,12 @@ func (m *TableModel) ClearTables() {
 }
 
 func (m *TableModel) sortByIP() {
-	sort.Slice(m.modelMinersList, func(i, j int) bool {
-		// TODO: Do I add a field that's just the miners last octet to help filer properly?
-		return m.modelMinersList[i].Miner.Ip < m.modelMinersList[j].Miner.Ip
-	})
+	if len(m.modelMinersList) > 0 {
+		sort.Slice(m.modelMinersList, func(i, j int) bool {
+			// TODO: Do I add a field that's just the miners last octet to help filer properly?
+			return m.modelMinersList[i].Miner.Ip < m.modelMinersList[j].Miner.Ip
+		})
+	}
 }
 
 func (m *TableModel) sortByMAC() {

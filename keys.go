@@ -97,8 +97,8 @@ var keys = keyMap{
 		key.WithHelp("q", "quit"),
 	),
 	Sort: key.NewBinding(
-		key.WithKeys("`"),
-		key.WithHelp("`", "Sort"),
+		key.WithKeys("'"),
+		key.WithHelp("'", "Sort"),
 	),
 	Farm: key.NewBinding(
 		key.WithKeys("a"),

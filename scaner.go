@@ -69,6 +69,7 @@ func GenIpRange(r FarmStruct) IPRange {
 func ScanRange(ips []string, wg *sync.WaitGroup, hashChannel chan MinerObj) {
 	for _, ip := range ips {
 		wg.Add(1)
+		//fmt.Println("scanning ip: " + ip)
 		go InitScanOne(ip, hashChannel, wg)
 	}
 }

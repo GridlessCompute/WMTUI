@@ -3,6 +3,7 @@ package main
 import (
 	api "WMTUI/wmapi"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -97,20 +98,20 @@ func parseSummary(summary map[string]interface{}) (api.SummaryS, api.ApiError, e
 }
 
 func InitScanOne(ip string, hashChan chan MinerObj, wg *sync.WaitGroup) {
-	// mnr := new(Miner)
-	defer wg.Done()
+	//defer wg.Done()
 	mnrO := new(MinerObj)
 	mnr := new(Miner)
 	address := generateAddress(ip, 4028)
 	// Initial connection
 	conn, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err2 := recover(); err2 != nil || err != nil {
-		// 	neterr, ok := err.(net.Error)
-		// 	if ok && neterr.Timeout() {
-		// 		logger.Printf("Connection timeout for %s\n", ip)
-		// 	} else {
-		// 		logger.Printf("Connection Refused: %s\n", ip)
-		// 	}
+		var neterr net.Error
+		ok := errors.As(err, &neterr)
+		if ok && neterr.Timeout() {
+			wg.Done()
+		} else {
+			wg.Done()
+		}
 	} else {
 		// get token if able to connect
 		token, tokenErr := getToken(ip, 4028, "admin")
@@ -150,9 +151,9 @@ func InitScanOne(ip string, hashChan chan MinerObj, wg *sync.WaitGroup) {
 		hashChan <- *mnrO
 
 		conn.Close()
+		wg.Done()
 
 	}
-
 }
 
 func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) {

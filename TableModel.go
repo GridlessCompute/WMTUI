@@ -54,7 +54,7 @@ func (m *TableModel) initTables(height int, width int) {
 		{Title: "status", Width: 10},
 		{Title: "Error Code", Width: 20},
 		{Title: "Up time", Width: 10},
-		{Title: "Hsrt", Width: 7},
+		{Title: "GHs", Width: 10},
 		{Title: "WT", Width: 5},
 		{Title: "W", Width: 7},
 		{Title: "Limit", Width: 7},
@@ -82,7 +82,7 @@ func (m *TableModel) generateRows() {
 				statusString,
 				miner.Miner.Errcode,
 				fmt.Sprint(miner.Miner.UpTime),
-				fmt.Sprint(miner.Miner.Hrrt),
+				fmt.Sprintf("%.2f", float32(miner.Miner.Hrrt)/1000),
 				fmt.Sprint(miner.Miner.Wt),
 				fmt.Sprint(miner.Miner.W),
 				fmt.Sprint(miner.Miner.Limit),
@@ -214,9 +214,9 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.initTables(winH, winW)
 			fmt.Println("Getting Miners")
 			m.GenerateInitialMinerList()
-			fmt.Println("Sorting Miners")
-			m.sortBy = IPSort
-			m.sortByIP()
+			//fmt.Println("Sorting Miners")
+			//m.sortBy = IPSort
+			//m.sortByIP()
 			fmt.Println("Generating rows")
 			m.generateRows()
 			m.help.Width = msg.Width
@@ -330,12 +330,8 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			//  Set Pools
 		case key.Matches(msg, m.keys.Pools):
-			// TODO: Implement Pools
-			// This is going to need a new pool view
+
 			if m.focused == SelectedView {
-				// set pools for multiple machines
-				// Need to find a way to send in the machines maybe with a message
-				// ? call update function on PoolModel and pass in a miners message that contains the miner info ?
 				Models[SelectedView] = m
 				return Models[PoolView].Update(tea.WindowSizeMsg{})
 			} else {
