@@ -1,1 +1,1 @@
-{"Farms":[{"Name":"Zengamina","Start":"10.20.0.1","End":"10.20.0.255"},{"Name":"Office","Start":"192.168.68.0","End":"192.168.68.255"},{"Name":"Mwangaza","Start":"10.34.0.1","End":"10.34.0.255"},{"Name":"Office SB","Start":"10.45.0.0","End":"10.45.0.255"},{"Name":"office 2","Start":"192.168.68.1","End":"192.168.68.255"},{"Name":"Gitugu","Start":"192.168.50.1","End":"192.168.50.255"}]}
+{"Farms":[{"Name":"DEFAULT","Start":"192.168.0.1","End":"192.168.0.255"}]}
