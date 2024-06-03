@@ -3,6 +3,7 @@ package main
 import (
 	api "WMTUI/wmapi"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -14,21 +15,23 @@ import (
 var wapi api.WhatsminerAPI
 
 type Miner struct {
-	Ip          string
-	Mac         string
-	Errcode     string
-	UpTime      int
-	Hrrt        int
-	Wt          int
-	W           int
-	Limit       int
-	Fastboot    string
-	Sleep       string
-	AcvtivePool string
+	Ip string
+	//IpO4       int
+	Mac        string
+	Errcode    string
+	UpTime     int
+	Hrrt       int
+	Wt         int
+	W          int
+	Limit      int
+	Fastboot   string
+	Sleep      string
+	ActivePool string
 }
 
 type MinerObj struct {
 	Miner   Miner
+	status  bool
 	Token   api.WhatsminerAccessToken
 	Created time.Time
 }
@@ -43,7 +46,7 @@ func generateAddress(ip string, port int) string {
 
 // }
 
-func aquireToken(ip string, port int, flags string) (api.WhatsminerAccessToken, error) {
+func getToken(ip string, port int, flags string) (api.WhatsminerAccessToken, error) {
 	token, tokenErr := api.NewWhatsminerAccessToken(ip, port, flags)
 
 	if tokenErr != nil {
@@ -93,23 +96,23 @@ func parseSummary(summary map[string]interface{}) (api.SummaryS, api.ApiError, e
 }
 
 func InitScanOne(ip string, hashChan chan MinerObj, wg *sync.WaitGroup) {
-	// mnr := new(Miner)
-	defer wg.Done()
+	//defer wg.Done()
 	mnrO := new(MinerObj)
 	mnr := new(Miner)
 	address := generateAddress(ip, 4028)
 	// Initial connection
 	conn, err := net.DialTimeout("tcp", address, 3*time.Second)
 	if err2 := recover(); err2 != nil || err != nil {
-		// 	neterr, ok := err.(net.Error)
-		// 	if ok && neterr.Timeout() {
-		// 		logger.Printf("Connection timeout for %s\n", ip)
-		// 	} else {
-		// 		logger.Printf("Connection Refused: %s\n", ip)
-		// 	}
+		var neterr net.Error
+		ok := errors.As(err, &neterr)
+		if ok && neterr.Timeout() {
+			wg.Done()
+		} else {
+			wg.Done()
+		}
 	} else {
 		// get token if able to connect
-		token, tokenErr := aquireToken(ip, 4028, "admin")
+		token, tokenErr := getToken(ip, 4028, "admin")
 		if tokenErr != nil {
 			// fmt.Println(tokenErr.Error())
 		}
@@ -137,6 +140,8 @@ func InitScanOne(ip string, hashChan chan MinerObj, wg *sync.WaitGroup) {
 
 		mnr.Ip = ip
 
+		//mnr.IpO4, _ = strconv.Atoi(strings.Split(ip, ".")[3])
+
 		mnrO.Created = time.Now()
 		mnrO.Token = token
 		mnrO.Miner = *mnr
@@ -144,13 +149,15 @@ func InitScanOne(ip string, hashChan chan MinerObj, wg *sync.WaitGroup) {
 		hashChan <- *mnrO
 
 		conn.Close()
+		wg.Done()
 
 	}
-
 }
 
 func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) {
 	defer wg.Done()
+
+	var ap string
 	//Get Miner Info
 	info, err := getFromApi(mnrO.Token, "get_miner_info")
 	if err != nil {
@@ -169,21 +176,21 @@ func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) 
 		err = json.Unmarshal(i, &infoStruct2)
 	}
 
-	// // Get Pool Info
-	// pools, err := getFromApi(mnrO.Token, "pools")
-	// if err != nil {
-	// 	// fmt.Println(err.Error())
-	// }
+	// Get Pool Info
+	pools, err := getFromApi(mnrO.Token, "pools")
+	if err != nil {
+		// fmt.Println(err.Error())
+	}
 
-	// p, err := json.Marshal(pools)
-	// if err != nil {
-	// 	// fmt.Println(err.Error())
-	// }
-	// var poolStruct api.GetPoolInfoS
-	// err = json.Unmarshal(p, &poolStruct)
-	// if err != nil {
-	// 	// fmt.Println(err.Error())
-	// }
+	p, err := json.Marshal(pools)
+	if err != nil {
+		// fmt.Println(err.Error())
+	}
+	var poolStruct api.GetPoolInfoS
+	err = json.Unmarshal(p, &poolStruct)
+	if err != nil {
+		// fmt.Println(err.Error())
+	}
 
 	// Get Error Code
 	er, erErr := getFromApi(mnrO.Token, "get_error_code")
@@ -213,19 +220,19 @@ func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) 
 		fmt.Println(summaryErr.Error())
 	}
 
-	// var ap string
-	// if len(poolStruct.Pools) > 0 {
-	// 	ap = poolStruct.Pools[0].URL
-	// } else {
-	// 	ap = ""
-	// }
+	if len(poolStruct.Pools) > 0 {
+		ap = poolStruct.Pools[0].URL
+	} else {
+		ap = ""
+	}
 
 	res, _, parseErr := parseSummary(summary)
 	if parseErr != nil {
 
 	} else {
-		if len(res.Summary) > 0 {
-			mnrO.Miner.AcvtivePool = "pool"
+		if res.Status[0].Status == "S" && res.Summary[0].PowerLimit != 0 {
+			mnrO.status = true
+			mnrO.Miner.ActivePool = ap
 			mnrO.Miner.Hrrt = int(res.Summary[0].HSRT)
 			mnrO.Miner.Limit = res.Summary[0].PowerLimit
 			mnrO.Miner.UpTime = res.Summary[0].Uptime
@@ -233,6 +240,18 @@ func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) 
 			mnrO.Miner.Wt = int(res.Summary[0].PowerRate)
 			mnrO.Miner.Errcode = matchedString
 			mnrO.Miner.Fastboot = res.Summary[0].BtminerFastBoot
+
+			hashChannel <- mnrO
+		} else if res.Status[0].Status == "E" || (res.Status[0].Status == "S" && res.Summary[0].PowerLimit == 0) {
+			mnrO.status = false
+			mnrO.Miner.ActivePool = ""
+			mnrO.Miner.Hrrt = 0
+			mnrO.Miner.Limit = 0
+			mnrO.Miner.UpTime = 0
+			mnrO.Miner.W = 0
+			mnrO.Miner.Wt = 0
+			mnrO.Miner.Errcode = ""
+			mnrO.Miner.Fastboot = ""
 
 			hashChannel <- mnrO
 		}

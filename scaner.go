@@ -39,10 +39,10 @@ func GenerateRangeIPs(r IPRange) []string {
 		O3 := strconv.Itoa(i)
 		for _, ip := range subs {
 			O4 := strconv.Itoa(ip)
+
 			ips = append(ips, fmt.Sprint(base+O3+"."+O4))
 		}
 	}
-
 	return ips
 }
 
@@ -69,6 +69,7 @@ func GenIpRange(r FarmStruct) IPRange {
 func ScanRange(ips []string, wg *sync.WaitGroup, hashChannel chan MinerObj) {
 	for _, ip := range ips {
 		wg.Add(1)
+		//fmt.Println("scanning ip: " + ip)
 		go InitScanOne(ip, hashChannel, wg)
 	}
 }
