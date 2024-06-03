@@ -58,8 +58,6 @@ func (m PoolModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-// How do I get the Ip And Mac
-// Potentially send with a message
 func NewPoolInfo(url1, url2, url3, worker1, worker2, worker3, psswd1, psswd2, psswd3, workerFormatting string) poolStruct {
 	var ps poolStruct
 	// ps.machineMac = miner.Miner.Mac
@@ -77,6 +75,8 @@ func NewPoolInfo(url1, url2, url3, worker1, worker2, worker3, psswd1, psswd2, ps
 	ps.Psswd2 = psswd2
 	ps.Psswd3 = psswd3
 
+	ps.WorkerType = workerFormatting
+
 	return ps
 
 }
@@ -87,9 +87,9 @@ func NewPoolInfo(url1, url2, url3, worker1, worker2, worker3, psswd1, psswd2, ps
 
 func (m PoolModel) CreatePool() tea.Msg {
 	pool := NewPoolInfo(
-		m.url1.Value(), m.worker1.Value(), m.psswd1.Value(),
-		m.url2.Value(), m.worker2.Value(), m.psswd2.Value(),
-		m.url3.Value(), m.worker3.Value(), m.psswd3.Value(),
+		m.url1.Value(), m.url2.Value(), m.url3.Value(),
+		m.worker1.Value(), m.worker2.Value(), m.worker3.Value(),
+		m.psswd1.Value(), m.psswd2.Value(), m.psswd3.Value(),
 		m.workerType.Value(),
 	)
 
@@ -225,7 +225,7 @@ func (m PoolModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, textinput.Blink
 		case "enter":
-			return Models[ListView], m.CreatePool
+			return Models[TableView], m.CreatePool
 		}
 	}
 	if m.url1.Focused() {

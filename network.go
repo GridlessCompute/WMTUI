@@ -67,8 +67,6 @@ func getFromApi(token api.WhatsminerAccessToken, cmd string) (map[string]interfa
 
 func SendToApi(token api.WhatsminerAccessToken, cmd string, params map[string]interface{}) (map[string]interface{}, error) {
 	res, err := wapi.ExecCommand(&token, cmd, params)
-	fmt.Println(cmd)
-	fmt.Println(params)
 	if err != nil {
 		fmt.Println(err)
 	}

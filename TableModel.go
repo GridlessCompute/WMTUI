@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,8 @@ const (
 )
 
 var res map[string]interface{}
+
+var poolmsg poolStruct
 
 const (
 	IPSort sortBy = iota
@@ -126,7 +129,6 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case SetFarmMsg:
-
 		m.ClearTables()
 		//m.initTables(winH, winW)
 		m.GenerateInitialMinerList()
@@ -140,9 +142,10 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			//take msg.POOLINFO and send a command with it, making custom workernames
 			mac := m.tables[m.focused].SelectedRow()[1]
 			miner := m.FindSelectedMiner(mac)
+			poolmsg = msg
 			if msg.WorkerType == "mac" || msg.WorkerType == "MAC" {
 				//do thing based on mac
-				minerMac := miner.Miner.Mac
+				minerMac := strings.Replace(miner.Miner.Mac, ":", "", -1)
 				if msg.Worker1 != "" {
 					msg.Worker1 = msg.Worker1 + "." + minerMac
 				}
@@ -152,12 +155,11 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if msg.Worker3 != "" {
 					msg.Worker3 = msg.Worker3 + "." + minerMac
 				}
-				// SENDTOAPI POOLS GOES BELOW
+				// SENDTOAPI POOLS GOES BELOw
 				SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
-
 			} else if msg.WorkerType == "ip" || msg.WorkerType == "IP" {
 				//do thing based on IP
-				minerIP := miner.Miner.Ip
+				minerIP := strings.Replace(miner.Miner.Ip, ".", "x", -1)
 				if msg.Worker1 != "" {
 					msg.Worker1 = msg.Worker1 + "." + minerIP
 				}
@@ -167,29 +169,34 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if msg.Worker3 != "" {
 					msg.Worker3 = msg.Worker3 + "." + minerIP
 				}
-				// SENDTOAPI POOLS GOES HERE
-				SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+				// SENDTOAPI POOLS GOES HERe
+				res, err := SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+				if err != nil {
+					log.Println(err)
+				}
+				log.Println(res)
 			}
 		} else if m.focused == SelectedView {
 			//take msg.POOLINFO and send a command with it, making custom workernames
 			miners := m.FindSelectedMiners()
 			if msg.WorkerType == "mac" || msg.WorkerType == "MAC" {
 				for _, miner := range miners {
+					minerMac := strings.Replace(miner.Miner.Mac, ":", "", -1)
 					if msg.Worker1 != "" {
-						msg.Worker1 = msg.Worker1 + "." + miner.Miner.Mac
+						msg.Worker1 = msg.Worker1 + "." + minerMac
 					}
 					if msg.Worker2 != "" {
-						msg.Worker2 = msg.Worker2 + "." + miner.Miner.Mac
+						msg.Worker2 = msg.Worker2 + "." + minerMac
 					}
 					if msg.Worker3 != "" {
-						msg.Worker3 = msg.Worker3 + "." + miner.Miner.Mac
+						msg.Worker3 = msg.Worker3 + "." + minerMac
 					}
 					// SENDTOAPI POOLS GOES BELOW
-					SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+					res, _ = SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
 				}
 			} else if msg.WorkerType == "ip" || msg.WorkerType == "IP" {
 				for _, miner := range miners {
-					minerIP := miner.Miner.Ip
+					minerIP := strings.Replace(miner.Miner.Ip, ".", "x", -1)
 					if msg.Worker1 != "" {
 						msg.Worker1 = msg.Worker1 + "." + minerIP
 					}
@@ -200,7 +207,7 @@ func (m *TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						msg.Worker3 = msg.Worker3 + "." + minerIP
 					}
 					// SENDTOAPI POOLS GOES HERE
-					SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
+					res, _ = SendToApi(miner.Token, "update_pools", map[string]interface{}{"pool1": msg.Url1, "worker1": msg.Worker1, "passwd1": msg.Psswd1, "pool2": msg.Url2, "worker2": msg.Worker2, "passwd2": msg.Psswd2, "pool3": msg.Url3, "worker3": msg.Worker3, "passwd3": msg.Psswd3})
 				}
 			}
 		}
@@ -412,7 +419,7 @@ func (m *TableModel) View() string {
 
 			helpView := m.help.View(m.keys)
 
-			return m.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView + "\n" + ChosenFarm.Name
+			return m.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView + "\n" + ChosenFarm.Name + "\n" + fmt.Sprintln(res)
 		default:
 			return m.tables[SelectedView].View() + "\n" + m.help.View(m.keys) + "\n" + ChosenFarm.Name
 		}

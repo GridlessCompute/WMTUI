@@ -8,10 +8,11 @@
 ### Features:
 
 - See Whatsminers on a set ip range
+  - view: IP, Mac, Status, Error Codes, Uptime, GHs, Efficiency, Wattage, Set Power Limit, 1st pool URL
 - Switch between multiple saved ip ranges
 - Send command to one or many machines
     - Sleep and Wake machines
-    - Set pools **_(WIP)_**
+    - Set pools
     - Set Power Limit
     -  Enable / Disable Fastboot
     -  Reboot
@@ -39,6 +40,8 @@
 ### Known Bugs and Missing Features
 
 - Setting pools has no validation check on both the pool URL and worker name.
+- Setting farms has no IP validation
+- Farm IP ranges are only based on the last 2 octets of the IP address
 - API Errors are currently unhandled and may crash the program.
 - No feedback on command success or failure.
 - Scanning for miners will occasionally miss some.
