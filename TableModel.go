@@ -419,7 +419,7 @@ func (m *TableModel) View() string {
 
 			helpView := m.help.View(m.keys)
 
-			return m.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView + "\n" + ChosenFarm.Name + "\n" + fmt.Sprintln(res)
+			return m.tables[MainView].View() + "\n" + strings.Repeat("\n", 8) + helpView + "\n" + ChosenFarm.Name
 		default:
 			return m.tables[SelectedView].View() + "\n" + m.help.View(m.keys) + "\n" + ChosenFarm.Name
 		}
