@@ -59,14 +59,6 @@ func SetSavedFarm(farm FarmStruct) {
 }
 
 func main() {
-
-	F, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-
-	Logging = log.New(F, "", log.LstdFlags|log.Lshortfile)
-
 	ChosenFarm = PullSavedFarm()
 	Models = []tea.Model{NewTable(), NewList(), NewForm(), NewPoolForm(), NewPower()}
 	SelectedModel = Models[TableView]

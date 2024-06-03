@@ -39,17 +39,19 @@
 
 ### Known Bugs and Missing Features
 
+- The view can break if your terminal window is too small
 - Setting pools has no validation check on both the pool URL and worker name.
 - Setting farms has no IP validation
 - Farm IP ranges are only based on the last 2 octets of the IP address
 - API Errors are currently unhandled and may crash the program.
 - No feedback on command success or failure.
 - Scanning for miners will occasionally miss some.
-- The program will occasionally lock up on launch requiring a force killing of the main process.
+- WMTUI will occasionally lock up on launch requiring a force killing of the main process.
+- WMTUI will occasionally crash on startup
 - When switching between farms the rescan doesn't always scan properly, requiring a restart to fully switch to the new farm.
 
 ### Manual Farm Setup
- **WMTUI** comes preset with the `192.168.0.0/24` ip range and more can be added while running.  
+ WMTUI comes preset with the `192.168.0.0/24` ip range and more can be added while running.  
  The `FARMS.JSON` file can be manually edited as well if preferred,  
  farms are stored in the following JSON format:
  >{<br>
