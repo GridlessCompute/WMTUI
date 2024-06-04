@@ -1,3 +1,5 @@
+// Package based off whatsminer-api by satoshi-anonymoto, https://github.com/satoshi-anonymoto/whatsminer-api
+
 package wmapi
 
 import (
