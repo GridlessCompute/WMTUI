@@ -230,7 +230,19 @@ func GetMinerData(wg *sync.WaitGroup, mnrO MinerObj, hashChannel chan MinerObj) 
 	if parseErr != nil {
 
 	} else {
-		if res.Status[0].Status == "S" && res.Summary[0].PowerLimit != 0 {
+		if res.Status == nil {
+			mnrO.status = false
+			mnrO.Miner.ActivePool = "API_ERROR"
+			mnrO.Miner.Hrrt = 0
+			mnrO.Miner.Limit = 0
+			mnrO.Miner.UpTime = 0
+			mnrO.Miner.W = 0
+			mnrO.Miner.Wt = 0
+			mnrO.Miner.Errcode = "API_ERROR"
+			mnrO.Miner.Fastboot = "API_ERROR"
+
+			hashChannel <- mnrO
+		} else if res.Status[0].Status == "S" && res.Summary[0].PowerLimit != 0 {
 			mnrO.status = true
 			mnrO.Miner.ActivePool = ap
 			mnrO.Miner.Hrrt = int(res.Summary[0].HSRT)
