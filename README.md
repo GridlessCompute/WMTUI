@@ -1,12 +1,8 @@
-
-
-
-
 <p align="center">
-  <img src="https://github.com/GridlessCompute/WMTUI/assets/98416347/3c8eb6ea-8d13-4caf-bf1b-7820b8aae790" alt="Sublime's custom image"/>
+  <img src="https://github.com/GridlessCompute/WMTUI/assets/98416347/4f4d3c34-3696-4298-8542-65cbf3106a8b" alt="Sublime's custom image"/>
 </p>
 <p align="center">
-  <img src="https://github.com/GridlessCompute/WMTUI/assets/98416347/6c61100f-22df-42e9-b9c2-9e12b72653cb" alt="Sublime's custom image"/>
+  <img src="https://github.com/GridlessCompute/WMTUI/assets/98416347/be7e0514-6d84-44a1-840c-3d2f1315fe28" alt="Sublime's custom image"/>
 </p>
 
 
