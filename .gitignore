@@ -6,3 +6,6 @@
 
 ## Testing log file
 testlogfile
+
+# farm files
+*.json
