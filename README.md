@@ -106,6 +106,7 @@ Navigate the menu with `↓ ↑`, select the desired farm with `enter` and wait 
 - Selected miners can be sent back to the main page as duplicates if refreshing after selecting.
   - Refresh again to get rid of them.
 - There's currently no way to bulk remove selected machines
+- Will always scan an IP range from 1 - 255
 - WMTUI will occasionally lock up on launch requiring a force killing of the main process.
 - WMTUI will occasionally crash on startup.
 - When switching between farms the rescan doesn't always scan properly, requiring a restart to fully switch to the new farm.
