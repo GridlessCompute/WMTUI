@@ -1,14 +1,15 @@
-package main
+package models
 
 import (
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	"log"
-	"strconv"
-	"strings"
 )
 
 type status int

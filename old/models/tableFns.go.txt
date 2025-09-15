@@ -1,11 +1,12 @@
-package main
+package models
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
 	"sort"
 	"sync"
+
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m *TableModel) GenerateInitialMiner(scanwg *sync.WaitGroup, popwg *sync.WaitGroup, mainChannel chan MinerObj, swg *sync.WaitGroup) {

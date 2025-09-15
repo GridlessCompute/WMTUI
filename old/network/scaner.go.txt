@@ -1,4 +1,4 @@
-package main
+package network
 
 import (
 	"fmt"
@@ -46,7 +46,7 @@ func GenerateRangeIPs(r IPRange) []string {
 	return ips
 }
 
-func GenIpRange(r FarmStruct) IPRange {
+func GenIpRange(r models.FarmStruct) IPRange {
 	var iprange IPRange
 
 	start := strings.Split(r.Start, ".")

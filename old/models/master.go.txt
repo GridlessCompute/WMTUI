@@ -1,0 +1,13 @@
+package models
+
+import tea "github.com/charmbracelet/bubbletea"
+
+type MasterModel struct {
+	SelectedModel int
+	Models        []tea.Model
+}
+
+func NewMasterModel() tea.Model {
+	return nil
+}
+
