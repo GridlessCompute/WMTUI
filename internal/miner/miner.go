@@ -72,7 +72,7 @@ func NewTestMiner(t int, ip string) *Miner {
 		Efficiency: 27.4,
 		Power:      12,
 		PowerLimit: 3500,
-		Pool:       "qhy?",
+		Pool:       "why?",
 	}
 
 	return &mnr

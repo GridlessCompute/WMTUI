@@ -53,10 +53,41 @@ func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				mnrs = append(mnrs, miner.NewTestMiner(i%3, fmt.Sprintf("192.168.42.%d", i)))
 			}
 			m.Table, cmd = m.Table.Update(minertable.MinerUpdateMsg{Miners: mnrs})
+		case "F":
+			m.Table, cmd = m.Table.Update(minertable.FastbootMsg{})
+			return m, cmd
+		case "L":
+			// TODO: make this take an input on press, then send msg
+			m.Table, cmd = m.Table.Update(minertable.LimitMsg{Limit: 3000, Vlt: 11.5, Freq: 300})
+			return m, cmd
+		case "O":
+			m.Table, cmd = m.Table.Update(minertable.SlowbootMsg{})
+			return m, cmd
+		case "P":
+			// TODO: make this take an input on press, then send msg
+			m.Table, cmd = m.Table.Update(minertable.PoolMsg{Pools: []minertable.Pool{}})
+			return m, cmd
+		case "R":
+			m.Table, cmd = m.Table.Update(minertable.RebootMsg{})
+			return m, cmd
+		case "S":
+			m.Table, cmd = m.Table.Update(minertable.SleepMsg{})
+			return m, cmd
+		case "W":
+			// TODO: make this take an input on press, then send msg
+			m.Table, cmd = m.Table.Update(minertable.WakeMsg{Limit: 3000})
+			return m, cmd
 		default:
 			m.Table, cmd = m.Table.Update(msg)
 			return m, cmd
+
 		}
+	case minertable.CommandErrMsg:
+		for _, e := range msg.Errors {
+			m.Logging, cmd = m.Logging.Update(logging.LoggingMsg{Err: true, Message: e.Error()})
+			cmds = append(cmds, cmd)
+		}
+		return m, tea.Batch(cmds...)
 	case minertable.MinerUpdateMsg:
 		m.Table, cmd = m.Table.Update(msg)
 		return m, cmd

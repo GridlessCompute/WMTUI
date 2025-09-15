@@ -4,6 +4,7 @@ import (
 	"WMTUI/internal/miner"
 	"fmt"
 
+	"github.com/GridlessCompute/wmapi/client"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -21,6 +22,32 @@ var Columns = []table.Column{
 	{Title: "Power", Width: 10},
 	{Title: "Limit", Width: 10},
 }
+
+type Pool struct {
+	URL      string
+	Worker   string
+	Password string
+}
+
+type CommandErrMsg struct{ Errors []error }
+
+type RebootMsg struct{}
+
+type SleepMsg struct{}
+
+type PoolMsg struct{ Pools []Pool }
+
+type LimitMsg struct {
+	Vlt   float64
+	Freq  float64
+	Limit int
+}
+
+type WakeMsg struct{ Limit int }
+
+type FastbootMsg struct{}
+
+type SlowbootMsg struct{}
 
 // type Miner struct {
 // 	Selected   bool
@@ -91,11 +118,52 @@ func (m MinerTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Table.SetRows(makeNewRows(m.MinerList))
 			return m, nil
 		}
-
+	case FastbootMsg:
+		errs := m.fastboot()
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
+	case LimitMsg:
+		errs := m.limit(msg.Freq, msg.Vlt, msg.Limit)
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
 	case MinerUpdateMsg:
 		m.MinerList = msg.Miners
 		m.Table.SetRows(makeNewRows(m.MinerList))
 		return m, nil
+	case PoolMsg:
+		errs := m.pools(msg.Pools)
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
+	case RebootMsg:
+		errs := m.reboot()
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
+	case SleepMsg:
+		errs := m.sleep()
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
+	case SlowbootMsg:
+		errs := m.slowboot()
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
+	case WakeMsg:
+		errs := m.wake(msg.Limit)
+		if len(errs) == 0 {
+			return m, nil
+		}
+		return m, func() tea.Msg { return CommandErrMsg{Errors: errs} }
 	}
 
 	var cmd tea.Cmd
@@ -105,6 +173,176 @@ func (m MinerTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m MinerTableModel) View() string {
 	return m.Table.View()
+}
+
+func (m MinerTableModel) fastboot() []error {
+	errors := []error{}
+	for _, mnr := range m.MinerList {
+		if mnr.Selected && mnr.Type == 1 {
+			_, err := mnr.API.WM.Write.EnableFastboot()
+			if err != nil {
+				e := fmt.Errorf("failed to enable fastboot for %s: %w", mnr.IP, err)
+				errors = append(errors, e)
+			}
+		}
+	}
+	return errors
+}
+
+func (m MinerTableModel) limit(freq, vlt float64, limit int) []error {
+	errors := []error{}
+	for _, mnr := range m.MinerList {
+		if mnr.Selected {
+			switch mnr.Type {
+			case 1:
+				_, err := mnr.API.WM.Write.AdjPowerLimit(limit)
+				if err != nil {
+					e := fmt.Errorf("failed to sleep %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			case 2:
+				if err := mnr.API.Epic.Post.Tune(freq, vlt); err != nil {
+					e := fmt.Errorf("failed to sleep %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			}
+		}
+	}
+	return errors
+}
+
+func (m MinerTableModel) pools(p []Pool) []error {
+	var pool1 Pool
+	var pool2 Pool
+	var pool3 Pool
+
+	errors := []error{}
+
+	switch len(p) {
+	case 1:
+		pool1.URL = p[0].URL
+		pool1.Worker = p[0].Worker
+		pool1.Password = p[0].Password
+	case 2:
+		pool1.URL = p[0].URL
+		pool1.Worker = p[0].Worker
+		pool1.Password = p[0].Password
+		pool2.URL = p[1].URL
+		pool2.Worker = p[1].Worker
+		pool2.Password = p[1].Password
+	case 3:
+		pool1.URL = p[0].URL
+		pool1.Worker = p[0].Worker
+		pool1.Password = p[0].Password
+		pool2.URL = p[1].URL
+		pool2.Worker = p[1].Worker
+		pool2.Password = p[1].Password
+		pool3.URL = p[2].URL
+		pool3.Worker = p[2].Worker
+		pool3.Password = p[2].Password
+	}
+
+	for _, mnr := range m.MinerList {
+		if mnr.Selected {
+			switch mnr.Type {
+			case 1:
+				_, err := mnr.API.WM.Write.Pools(
+					client.Pool{URL: pool1.URL, Worker: pool1.Worker, Password: pool1.Password},
+					client.Pool{URL: pool2.URL, Worker: pool2.Worker, Password: pool2.Password},
+					client.Pool{URL: pool3.URL, Worker: pool3.Worker, Password: pool3.Password},
+				)
+				if err != nil {
+					e := fmt.Errorf("failed to set pools for %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			case 2:
+				// TODO: findout if epic has a pools endpoint, Dont know why it wouldnt
+			}
+		}
+	}
+	return errors
+}
+
+func (m MinerTableModel) reboot() []error {
+	errors := []error{}
+	for _, mnr := range m.MinerList {
+		if mnr.Selected {
+			switch mnr.Type {
+			case 1:
+				_, err := mnr.API.WM.Write.RebootSystem()
+				if err != nil {
+					e := fmt.Errorf("failed to reboot %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+					continue
+				}
+			case 2:
+				if err := mnr.API.Epic.Post.Reboot(0); err != nil {
+					e := fmt.Errorf("failed to reboot %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+					continue
+				}
+			}
+		}
+	}
+	return errors
+}
+
+func (m MinerTableModel) sleep() []error {
+	errors := []error{}
+	for _, mnr := range m.MinerList {
+		if mnr.Selected {
+			switch mnr.Type {
+			case 1:
+				_, err := mnr.API.WM.Write.AdjPowerLimit(0)
+				if err != nil {
+					e := fmt.Errorf("failed to sleep %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			case 2:
+				if err := mnr.API.Epic.Post.Miner(false); err != nil {
+					e := fmt.Errorf("failed to sleep %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			}
+		}
+	}
+	return errors
+}
+
+func (m MinerTableModel) slowboot() []error {
+	errors := []error{}
+	for _, mnr := range m.MinerList {
+		if mnr.Selected && mnr.Type == 1 {
+			_, err := mnr.API.WM.Write.Disablefastboot()
+			if err != nil {
+				e := fmt.Errorf("failed to disable fastboot for %s: %w", mnr.IP, err)
+				errors = append(errors, e)
+			}
+		}
+	}
+	return errors
+}
+
+func (m MinerTableModel) wake(l int) []error {
+	errors := []error{}
+	for _, mnr := range m.MinerList {
+		if mnr.Selected {
+			switch mnr.Type {
+			case 1:
+				_, err := mnr.API.WM.Write.AdjPowerLimit(l)
+				if err != nil {
+					e := fmt.Errorf("failed to sleep %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			case 2:
+				if err := mnr.API.Epic.Post.Miner(true); err != nil {
+					e := fmt.Errorf("failed to sleep %s: %w", mnr.IP, err)
+					errors = append(errors, e)
+				}
+			}
+		}
+	}
+	return errors
 }
 
 func makeNewRows(mnrs []*miner.Miner) []table.Row {
