@@ -1,10 +1,10 @@
-package minerScanner
+package scanner
 
 import (
 	"WMTUI/internal/config"
 	"WMTUI/internal/miner"
 	"WMTUI/internal/ui/logging"
-	"WMTUI/internal/ui/minertable"
+	"WMTUI/internal/ui/table"
 	"fmt"
 	"net"
 	"net/netip"
@@ -187,7 +187,7 @@ func (s *Scanner) StartScanning() {
 		s.Machines = append(s.Machines, m)
 	}
 
-	msg := minertable.MinerUpdateMsg{}
+	msg := table.MinerUpdateMsg{}
 	for _, m := range s.Machines {
 		msg.Miners = append(msg.Miners, m)
 	}

@@ -1,4 +1,4 @@
-package minertable
+package table
 
 import (
 	"WMTUI/internal/miner"
@@ -49,22 +49,7 @@ type FastbootMsg struct{}
 
 type SlowbootMsg struct{}
 
-// type Miner struct {
-// 	Selected   bool
-// 	Type       int
-// 	IP         string
-// 	Mac        string
-// 	Status     string
-// 	Errors     string
-// 	UpTime     time.Duration
-// 	Hashrate   float64
-// 	WTH        float64
-// 	Power      float64
-// 	PowerLimit float64
-// 	Pool       string
-// }
-
-type MinerTableModel struct {
+type TableModel struct {
 	Table     table.Model
 	loaded    bool
 	MinerList []*miner.Miner
@@ -74,21 +59,21 @@ type MinerUpdateMsg struct {
 	Miners []*miner.Miner
 }
 
-func NewMinerTableModel() tea.Model {
+func NewTableModel() tea.Model {
 	tbl := table.New(table.WithColumns(Columns), table.WithHeight(15))
 
-	return MinerTableModel{
+	return TableModel{
 		Table:     tbl,
 		loaded:    false,
 		MinerList: []*miner.Miner{},
 	}
 }
 
-func (m MinerTableModel) Init() tea.Cmd {
+func (m TableModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m MinerTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -171,11 +156,11 @@ func (m MinerTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m MinerTableModel) View() string {
+func (m TableModel) View() string {
 	return m.Table.View()
 }
 
-func (m MinerTableModel) fastboot() []error {
+func (m TableModel) fastboot() []error {
 	errors := []error{}
 	for _, mnr := range m.MinerList {
 		if mnr.Selected && mnr.Type == 1 {
@@ -189,7 +174,7 @@ func (m MinerTableModel) fastboot() []error {
 	return errors
 }
 
-func (m MinerTableModel) limit(freq, vlt float64, limit int) []error {
+func (m TableModel) limit(freq, vlt float64, limit int) []error {
 	errors := []error{}
 	for _, mnr := range m.MinerList {
 		if mnr.Selected {
@@ -211,7 +196,7 @@ func (m MinerTableModel) limit(freq, vlt float64, limit int) []error {
 	return errors
 }
 
-func (m MinerTableModel) pools(p []Pool) []error {
+func (m TableModel) pools(p []Pool) []error {
 	var pool1 Pool
 	var pool2 Pool
 	var pool3 Pool
@@ -263,7 +248,7 @@ func (m MinerTableModel) pools(p []Pool) []error {
 	return errors
 }
 
-func (m MinerTableModel) reboot() []error {
+func (m TableModel) reboot() []error {
 	errors := []error{}
 	for _, mnr := range m.MinerList {
 		if mnr.Selected {
@@ -287,7 +272,7 @@ func (m MinerTableModel) reboot() []error {
 	return errors
 }
 
-func (m MinerTableModel) sleep() []error {
+func (m TableModel) sleep() []error {
 	errors := []error{}
 	for _, mnr := range m.MinerList {
 		if mnr.Selected {
@@ -309,7 +294,7 @@ func (m MinerTableModel) sleep() []error {
 	return errors
 }
 
-func (m MinerTableModel) slowboot() []error {
+func (m TableModel) slowboot() []error {
 	errors := []error{}
 	for _, mnr := range m.MinerList {
 		if mnr.Selected && mnr.Type == 1 {
@@ -323,7 +308,7 @@ func (m MinerTableModel) slowboot() []error {
 	return errors
 }
 
-func (m MinerTableModel) wake(l int) []error {
+func (m TableModel) wake(l int) []error {
 	errors := []error{}
 	for _, mnr := range m.MinerList {
 		if mnr.Selected {

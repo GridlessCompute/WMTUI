@@ -2,10 +2,10 @@ package main
 
 import (
 	"WMTUI/internal/config"
-	"WMTUI/internal/minerScanner"
+	"WMTUI/internal/scanner"
 	"WMTUI/internal/ui"
 	"WMTUI/internal/ui/logging"
-	"WMTUI/internal/ui/minertable"
+	"WMTUI/internal/ui/table"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -78,11 +78,11 @@ func main() {
 		IPRange: "10.20.0.0/24",
 	}
 
-	ms := minerScanner.Scanner{
+	ms := scanner.Scanner{
 		Conf: s,
 	}
 
-	mt := minertable.NewMinerTableModel()
+	mt := table.NewTableModel()
 	lm := logging.NewLogging()
 	mm := ui.NewModel(&ms, lm, mt)
 	p := tea.NewProgram(mm, tea.WithAltScreen())
