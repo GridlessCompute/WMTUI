@@ -1,37 +1,61 @@
 package ui
 
 import (
+	"WMTUI/internal/config"
 	"WMTUI/internal/miner"
 	"WMTUI/internal/scanner"
 	"WMTUI/internal/ui/logging"
 	"WMTUI/internal/ui/popup"
+	"WMTUI/internal/ui/siteselection"
 	"WMTUI/internal/ui/table"
+	"context"
 	"fmt"
 	"strconv"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 type MasterModel struct {
-	Scanner      *scanner.Scanner
-	Table        tea.Model
-	Logging      tea.Model
-	Popup        tea.Model
-	Width        int
-	Height       int
-	PopupVisible bool
+	Scanner              *scanner.Scanner
+	Width                int
+	Height               int
+	Table                tea.Model
+	Logging              tea.Model
+	Popup                tea.Model
+	PopupVisible         bool
+	Spinner              spinner.Model
+	SpinnerVisible       bool
+	SiteSelection        tea.Model
+	SiteSelectionVisible bool
+	Context              context.Context
 }
 
-func NewModel(s *scanner.Scanner, v logging.ViewModel, t tea.Model) MasterModel {
+type scanStartMsg struct{}
+
+type startSpinnerMsg struct{}
+
+func NewModel(s *scanner.Scanner, v logging.ViewModel, t tea.Model, c config.Config) MasterModel {
 	return MasterModel{
-		Scanner:      s,
-		Logging:      v,
-		Table:        t,
-		Popup:        popup.PopupModel{},
-		PopupVisible: false,
+		Scanner:              s,
+		Logging:              v,
+		Table:                t,
+		Popup:                popup.PopupModel{},
+		PopupVisible:         false,
+		Spinner:              NewSpinner(),
+		SpinnerVisible:       false,
+		SiteSelection:        siteselection.NewModel(siteselection.NewItems(c)),
+		SiteSelectionVisible: false,
 	}
+}
+
+func NewSpinner() spinner.Model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	return s
 }
 
 func (m MasterModel) Init() tea.Cmd {
@@ -41,6 +65,17 @@ func (m MasterModel) Init() tea.Cmd {
 func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
+	if m.SiteSelectionVisible {
+		switch msg.(type) {
+		case siteselection.SelectedSiteMsg:
+			m.SiteSelectionVisible = false
+			return m, func() tea.Msg { return msg }
+		}
+
+		m.SiteSelection, cmd = m.SiteSelection.Update(msg)
+		return m, cmd
+	}
 
 	if m.PopupVisible {
 		// NOTE: this feels kinda wrong
@@ -55,6 +90,23 @@ func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
+	if m.SpinnerVisible {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q":
+				m.SpinnerVisible = false
+				return m, nil
+			}
+		case table.ScanDoneMsg:
+			m.SpinnerVisible = false
+			return m, func() tea.Msg { return msg }
+		}
+
+		m.Spinner, cmd = m.Spinner.Update(msg)
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
@@ -63,14 +115,20 @@ func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		m.Logging, cmd = m.Logging.Update(msg)
 		cmds = append(cmds, cmd)
+		m.SiteSelection, cmd = m.SiteSelection.Update(msg)
+		cmds = append(cmds, cmd)
+		m.SiteSelectionVisible = true
 		return m, tea.Batch(cmds...)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
+			if m.Context != nil {
+				m.Context.Done()
+			}
 			return m, tea.Quit
 		case "r":
-			go m.Scanner.StartScanning()
-			return m, nil
+			m.Context.Done()
+			return m, func() tea.Msg { return scanStartMsg{} }
 		case "t":
 			mnrs := []*miner.Miner{}
 			for i := 0; i <= 10; i++ {
@@ -105,6 +163,22 @@ func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Table, cmd = m.Table.Update(msg)
 			return m, cmd
 		}
+	case siteselection.SelectedSiteMsg:
+		m.Scanner.Conf = msg.Site
+		cmds = append(cmds, func() tea.Msg { return scanStartMsg{} })
+		cmds = append(cmds, func() tea.Msg { return startSpinnerMsg{} })
+		return m, tea.Batch(cmds...)
+	case startSpinnerMsg:
+		m.SpinnerVisible = true
+		return m, m.Spinner.Tick
+	case scanStartMsg:
+		go m.Scanner.ScanForMachines()
+		ctx := context.Background()
+		m.Context = ctx
+		return m, nil
+	case table.ScanDoneMsg:
+		go m.Scanner.RefreshLoop(m.Context)
+		return m, nil
 	case popup.PopupCloseMsg:
 		m.PopupVisible = false
 		m.Popup = popup.PopupModel{}
@@ -121,7 +195,6 @@ func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Table, cmd = m.Table.Update(msg)
 		return m, cmd
 	case logging.LoggingMsg:
-		fmt.Println("Got it?")
 		m.Logging, cmd = m.Logging.Update(msg)
 		return m, cmd
 	}
@@ -131,24 +204,58 @@ func (m MasterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m MasterModel) View() string {
 	normal := lipgloss.JoinVertical(lipgloss.Top, fmt.Sprintf("%4s", m.Table.View()), m.Logging.View())
 
-	if !m.PopupVisible {
-		return normal
+	if m.SiteSelectionVisible {
+		s := m.SiteSelection.View()
+		bg := lipgloss.NewStyle().
+			Align(lipgloss.Center).
+			Render(s)
+
+		cntr := lipgloss.Place(
+			(m.Width*6)/10,
+			m.Height,
+			lipgloss.Center,
+			lipgloss.Center,
+			bg,
+		)
+
+		return lipgloss.JoinVertical(lipgloss.Left, cntr, m.Logging.View())
 	}
 
-	p := m.Popup.View()
-	popupBg := lipgloss.NewStyle().
-		Align(lipgloss.Center).
-		Render(p)
+	if m.PopupVisible {
+		p := m.Popup.View()
+		popupBg := lipgloss.NewStyle().
+			Align(lipgloss.Center).
+			Render(p)
 
-	centeredPopup := lipgloss.Place(
-		m.Width,
-		m.Height,
-		lipgloss.Center,
-		lipgloss.Center,
-		popupBg,
-	)
+		centeredPopup := lipgloss.Place(
+			(m.Width*6)/10,
+			m.Height,
+			lipgloss.Center,
+			lipgloss.Center,
+			popupBg,
+		)
 
-	return lipgloss.JoinVertical(lipgloss.Left, normal, centeredPopup)
+		return lipgloss.JoinVertical(lipgloss.Left, centeredPopup, m.Logging.View())
+	}
+
+	if m.SpinnerVisible {
+		s := m.Spinner.View()
+		bg := lipgloss.NewStyle().
+			Align(lipgloss.Center).
+			Render("Scanning for\n", "machines\n", s)
+
+		cntr := lipgloss.Place(
+			m.Width,
+			(m.Height*6)/10,
+			lipgloss.Center,
+			lipgloss.Center,
+			bg,
+		)
+
+		return lipgloss.JoinVertical(lipgloss.Left, cntr, m.Logging.View())
+	}
+
+	return normal
 }
 
 func makePoolPopup() popup.PopupModel {

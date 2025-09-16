@@ -5,6 +5,7 @@ import (
 	"WMTUI/internal/miner"
 	"WMTUI/internal/ui/logging"
 	"WMTUI/internal/ui/table"
+	"context"
 	"fmt"
 	"net"
 	"net/netip"
@@ -17,9 +18,19 @@ import (
 )
 
 type Scanner struct {
-	Conf     config.Site
-	Machines []*miner.Miner
-	Program  *tea.Program
+	Conf        config.Site
+	Machines    []*miner.Miner
+	RefreshTime time.Duration
+	Program     *tea.Program
+}
+
+func NewScanner(c config.Site, r int) Scanner {
+	return Scanner{
+		Conf:        c,
+		Machines:    []*miner.Miner{},
+		RefreshTime: time.Duration(r * int(time.Second)),
+		Program:     nil,
+	}
 }
 
 func (s *Scanner) SendMsg(msg tea.Msg) {
@@ -72,6 +83,9 @@ func (s *Scanner) ScanForMachines() {
 	for m := range machinesChan {
 		s.Machines = append(s.Machines, m)
 	}
+
+	s.SendMsg(table.ScanDoneMsg{})
+
 }
 
 func GetWhatsminerInfo(m *miner.Miner) error {
@@ -149,9 +163,20 @@ func GetEpicInfo(m *miner.Miner) error {
 	return nil
 }
 
-func (s *Scanner) StartScanning() {
-	s.ScanForMachines()
+func (s *Scanner) RefreshLoop(ctx context.Context) {
+	t := time.NewTicker(s.RefreshTime)
 
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			s.RefreshMachineInfo()
+		}
+	}
+}
+
+func (s *Scanner) RefreshMachineInfo() {
 	var wg sync.WaitGroup
 
 	ch := make(chan *miner.Miner, len(s.Machines))
@@ -222,7 +247,7 @@ func isIPEpic(m *miner.Miner, ip string) error {
 }
 
 func isIpWhatsminer(m *miner.Miner, ip string) error {
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, 4028), 2*time.Second)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, 4028), 1*time.Second)
 	if err != nil {
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 			return fmt.Errorf("connection timed out for ip %s", ip)

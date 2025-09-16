@@ -73,18 +73,19 @@ import (
 
 func main() {
 
-	s := config.Site{
-		Name:    "Test",
-		IPRange: "10.20.0.0/24",
+	ms := scanner.Scanner{
+		RefreshTime: 30,
 	}
 
-	ms := scanner.Scanner{
-		Conf: s,
+	c := config.Config{
+		Sites: []config.Site{
+			{Name: "test", IPRange: "10.20.0.0/24"},
+		},
 	}
 
 	mt := table.NewTableModel()
 	lm := logging.NewLogging()
-	mm := ui.NewModel(&ms, lm, mt)
+	mm := ui.NewModel(&ms, lm, mt, c)
 	p := tea.NewProgram(mm, tea.WithAltScreen())
 	ms.SetProgram(p)
 

@@ -55,6 +55,8 @@ type TableModel struct {
 	MinerList []*miner.Miner
 }
 
+type ScanDoneMsg struct{}
+
 type MinerUpdateMsg struct {
 	Miners []*miner.Miner
 }
@@ -75,6 +77,10 @@ func (m TableModel) Init() tea.Cmd {
 
 func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.Table.SetWidth(msg.Width)
+		m.Table.SetHeight((msg.Height * 6) / 10)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
